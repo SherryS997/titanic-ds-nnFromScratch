@@ -211,7 +211,7 @@ def nn_model(X, Y, n_h = 4, num_iterations = 10000, learning_rate = 1.2, print_c
         parameters = update_parameters(parameters, grads, learning_rate)
                
         # Print the cost every 1000 iterations
-        if print_cost and i % 100 == 0:
+        if print_cost and i % 500 == 0:
             costs.append(cost)
             print ("Cost after iteration %i: %f" %(i, cost))
 

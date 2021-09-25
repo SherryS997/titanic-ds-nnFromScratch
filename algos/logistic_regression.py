@@ -104,7 +104,7 @@ def optimize(w, b, X, Y, num_iterations=100, learning_rate=0.009, print_cost=Fal
         b = b - learning_rate*db
             
         # Record the costs
-        if i % 100 == 0:
+        if i % 500 == 0:
             costs.append(cost)
         
             # Print the cost every 100 training iterations
