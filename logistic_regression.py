@@ -36,7 +36,7 @@ def initialize_with_zeros(dim):
     return w, b
 
 
-def propagate(w, b, X, Y):
+def propagate(w, b, X, Y, reg_term):
     """
     Implement the cost function and its gradient for the propagation explained above
 
@@ -45,6 +45,7 @@ def propagate(w, b, X, Y):
     b -- bias, a scalar
     X -- data of size (features, number of examples)
     Y -- true "label" vector (containing 0 if non-cat, 1 if cat) of size (1, number of examples)
+    reg_term -- regularization parameter
 
     Return:
     cost -- negative log-likelihood cost for logistic regression
@@ -55,9 +56,9 @@ def propagate(w, b, X, Y):
     m = X.shape[1]
 
     A = sigmoid(w.T@X + b)
-    cost = (-1/m)*np.sum((Y*np.log(A) + (1-Y)*np.log(1-A)))
+    cost = (-1/m)*np.sum((Y*np.log(A) + (1-Y)*np.log(1-A))) + (1/(2*m))*reg_term*np.sum(w**2)
 
-    dw = (1/m)*X@(A-Y).T
+    dw = (1/m)*X@(A-Y).T + (reg_term/m)*w
     db = (1/m)*np.sum(A-Y)
     
     cost = np.squeeze(np.array(cost))
@@ -68,7 +69,7 @@ def propagate(w, b, X, Y):
     return grads, cost
 
 
-def optimize(w, b, X, Y, num_iterations=100, learning_rate=0.009, print_cost=False):
+def optimize(w, b, X, Y, num_iterations=100, learning_rate=0.009, print_cost=False, reg_term=1):
     """
     This function optimizes w and b by running a gradient descent algorithm
     
@@ -93,7 +94,7 @@ def optimize(w, b, X, Y, num_iterations=100, learning_rate=0.009, print_cost=Fal
     costs = []
     
     for i in range(num_iterations):
-        grads, cost = propagate(w, b, X, Y)
+        grads, cost = propagate(w, b, X, Y, reg_term)
                 
         # Retrieve derivatives from grads
         dw = grads["dw"]
@@ -146,7 +147,7 @@ def predict(w, b, X):
     return Y_prediction
 
 
-def model(X_train, Y_train, X_test, Y_test, num_iterations=2000, learning_rate=0.5, print_cost=False):
+def model(X_train, Y_train, X_test, Y_test, num_iterations=2000, learning_rate=0.5, print_cost=False, reg_term=1):
     """
     Builds the logistic regression model by calling the function you've implemented previously
     
@@ -164,7 +165,7 @@ def model(X_train, Y_train, X_test, Y_test, num_iterations=2000, learning_rate=0
     """
     w, b = initialize_with_zeros(X_train.shape[0])
     
-    params, grads, costs = optimize(w, b, X_train, Y_train, num_iterations, learning_rate, print_cost)
+    params, grads, costs = optimize(w, b, X_train, Y_train, num_iterations, learning_rate, print_cost, reg_term)
     
     w = params["w"]
     b = params["b"]
