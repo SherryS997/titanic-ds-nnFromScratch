@@ -1,6 +1,13 @@
 import numpy as np
 import copy
 
+from numpy.core.fromnumeric import mean
+
+def normalize_data(X):
+    norm = np.linalg.norm(X)
+    matrix = X/norm  # normalized matrix
+    return matrix
+
 
 def sigmoid(z):
     """
@@ -56,7 +63,7 @@ def propagate(w, b, X, Y, reg_term):
     m = X.shape[1]
 
     A = sigmoid(w.T@X + b)
-    cost = (-1/m)*np.sum((Y*np.log(A) + (1-Y)*np.log(1-A))) + (1/(2*m))*reg_term*np.sum(w**2)
+    cost = (-1/m)*np.sum((Y*np.log(A) + (1-Y)*np.log(1-A))) + (1/(2*m))*reg_term*np.linalg.norm(w)
 
     dw = (1/m)*X@(A-Y).T + (reg_term/m)*w
     db = (1/m)*np.sum(A-Y)
@@ -104,7 +111,7 @@ def optimize(w, b, X, Y, num_iterations=100, learning_rate=0.009, print_cost=Fal
         b = b - learning_rate*db
             
         # Record the costs
-        if i % 500 == 0:
+        if i % (num_iterations/10) == 0:
             costs.append(cost)
         
             # Print the cost every 100 training iterations
@@ -132,6 +139,7 @@ def predict(w, b, X):
     Returns:
     Y_prediction -- a numpy array (vector) containing all predictions (0/1) for the examples in X
     '''
+    X = normalize_data(X)
     
     m = X.shape[1]
     Y_prediction = np.zeros((1, m))
@@ -163,6 +171,9 @@ def model(X_train, Y_train, X_test, Y_test, num_iterations=2000, learning_rate=0
     Returns:
     d -- dictionary containing information about the model.
     """
+    X_train = normalize_data(X_train)
+    X_test = normalize_data(X_test)
+
     w, b = initialize_with_zeros(X_train.shape[0])
     
     params, grads, costs = optimize(w, b, X_train, Y_train, num_iterations, learning_rate, print_cost, reg_term)

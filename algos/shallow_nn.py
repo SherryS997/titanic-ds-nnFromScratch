@@ -1,6 +1,14 @@
 import numpy as np
 import copy
 
+from numpy.core.fromnumeric import shape
+
+def normalize_data(X):
+    norm = np.linalg.norm(X)
+    matrix = X/norm  # normalized matrix
+    return matrix
+
+
 def sigmoid(z):
     """
     Compute the sigmoid of z
@@ -94,7 +102,7 @@ def forward_propagation(X, parameters):
     return A2, cache
 
 
-def compute_cost(A2, Y):
+def compute_cost(W1, W2, A2, Y, reg_term):
     """
     Computes the cross-entropy cost given in equation (13)
     
@@ -109,8 +117,7 @@ def compute_cost(A2, Y):
     
     m = Y.shape[1] # number of examples
     
-    logprobs = np.multiply(Y, np.log(A2)) + np.multiply((1-Y), np.log(1-A2))
-    cost = - np.sum(logprobs)/m
+    cost = (-1/m)*np.sum((Y*np.log(A2) + (1-Y)*np.log(1-A2))) + reg_term*(np.linalg.norm(W1) + np.linalg.norm(W2))
         
     cost = float(np.squeeze(cost))  # makes sure cost is the dimension we expect. 
                                     # E.g., turns [[17]] into 17 
@@ -152,7 +159,7 @@ def backward_propagation(parameters, cache, X, Y):
     return grads
 
 
-def update_parameters(parameters, grads, learning_rate = 1.2):
+def update_parameters(m, parameters, grads, learning_rate = 1.2, reg_term=1):
     """
     Updates parameters using the gradient descent update rule given above
     
@@ -168,9 +175,9 @@ def update_parameters(parameters, grads, learning_rate = 1.2):
 
     dW1, db1, dW2, db2 = grads["dW1"], grads["db1"], grads["dW2"], grads["db2"]
         
-    W1 = W1 - learning_rate*dW1
+    W1 = W1 - learning_rate*(dW1 + (reg_term/m)*W1)
     b1 = b1 - learning_rate*db1
-    W2 = W2 - learning_rate*dW2
+    W2 = W2 - learning_rate*(dW2 + (reg_term/m)*W2)
     b2 = b2 - learning_rate*db2
         
     parameters = {"W1": W1,
@@ -181,7 +188,7 @@ def update_parameters(parameters, grads, learning_rate = 1.2):
     return parameters
 
 
-def nn_model(X, Y, n_h = 4, num_iterations = 10000, learning_rate = 1.2, print_cost=False):
+def nn_model(X, Y, n_h = 4, num_iterations = 10000, learning_rate = 1.2, reg_term = 1, print_cost=False):
     """
     Arguments:
     X -- dataset of shape (2, number of examples)
@@ -193,7 +200,8 @@ def nn_model(X, Y, n_h = 4, num_iterations = 10000, learning_rate = 1.2, print_c
     Returns:
     parameters -- parameters learnt by the model. They can then be used to predict.
     """
-    
+    m = X.shape[1]
+
     np.random.seed(3)
     n_x = layer_sizes(X, Y)[0]
     n_y = layer_sizes(X, Y)[2]
@@ -206,13 +214,14 @@ def nn_model(X, Y, n_h = 4, num_iterations = 10000, learning_rate = 1.2, print_c
     for i in range(0, num_iterations):
 
         A2, cache = forward_propagation(X, parameters)
-        cost = compute_cost(A2, Y)
+        cost = compute_cost(parameters["W1"], parameters["W2"], A2, Y, reg_term)
         grads = backward_propagation(parameters, cache, X, Y)
-        parameters = update_parameters(parameters, grads, learning_rate)
+        parameters = update_parameters(m, parameters, grads, learning_rate, reg_term)
+
+        costs.append(cost)
                
         # Print the cost every 1000 iterations
-        if print_cost and i % 500 == 0:
-            costs.append(cost)
+        if print_cost and i % (num_iterations/10) == 0 or i == num_iterations - 1:
             print ("Cost after iteration %i: %f" %(i, cost))
 
     return parameters, costs
@@ -229,6 +238,7 @@ def predict(parameters, X):
     Returns
     predictions -- vector of predictions of our model (red: 0 / blue: 1)
     """
+    X = normalize_data(X)
 
     A2, cache = forward_propagation(X, parameters)
 
@@ -246,7 +256,7 @@ def predict(parameters, X):
     return Y_prediction
 
 
-def model(X_train, Y_train, X_test, Y_test, n_h = 4, num_iterations=2000, learning_rate=1.2, print_cost=False):
+def model(X_train, Y_train, X_test, Y_test, n_h = 4, num_iterations=2000, learning_rate=1.2, reg_term=1, print_cost=False):
     """
     Builds the logistic regression model by calling the function you've implemented previously
     
@@ -262,8 +272,10 @@ def model(X_train, Y_train, X_test, Y_test, n_h = 4, num_iterations=2000, learni
     Returns:
     d -- dictionary containing information about the model.
     """
+    X_train = normalize_data(X_train)
+    X_test = normalize_data(X_test)
    
-    parameters, costs = nn_model(X_train, Y_train, n_h, num_iterations, learning_rate, print_cost)
+    parameters, costs = nn_model(X_train, Y_train, n_h, num_iterations, learning_rate, reg_term, print_cost)
         
     Y_prediction_train = predict(parameters, X_train)
     Y_prediction_test = predict(parameters, X_test)
