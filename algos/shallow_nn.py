@@ -117,7 +117,7 @@ def compute_cost(W1, W2, A2, Y, reg_term):
     
     m = Y.shape[1] # number of examples
     
-    cost = (-1/m)*np.sum((Y*np.log(A2) + (1-Y)*np.log(1-A2))) + reg_term*(np.linalg.norm(W1) + np.linalg.norm(W2))
+    cost = (-1/m)*np.sum((Y*np.log(A2) + (1-Y)*np.log(1-A2))) + (reg_term/(2*m))*(np.sum(W1**2) + np.sum(W2**2))
         
     cost = float(np.squeeze(cost))  # makes sure cost is the dimension we expect. 
                                     # E.g., turns [[17]] into 17 
@@ -145,11 +145,11 @@ def backward_propagation(parameters, cache, X, Y):
     A1, A2 = cache["A1"], cache["A2"]
 
     dZ2 = A2 - Y
-    dW2 = (1/Y.shape[1])*dZ2@A1.T
-    db2 = (1/Y.shape[1])*np.sum(dZ2, axis=1, keepdims=True)
+    dW2 = (1/m)*dZ2@A1.T
+    db2 = (1/m)*np.sum(dZ2, axis=1, keepdims=True)
     dZ1 = W2.T@dZ2*(1-A1**2)
-    dW1 = (1/Y.shape[1])*dZ1@X.T
-    db1 = (1/Y.shape[1])*np.sum(dZ1, axis=1, keepdims=True)
+    dW1 = (1/m)*dZ1@X.T
+    db1 = (1/m)*np.sum(dZ1, axis=1, keepdims=True)
         
     grads = {"dW1": dW1,
              "db1": db1,

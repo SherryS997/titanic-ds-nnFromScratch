@@ -243,7 +243,7 @@ def L_model_forward(X, parameters, activation="relu"):
             
     return AL, caches
 
-def compute_cost(AL, Y):
+def compute_cost(AL, Y, parameters, reg_term):
     """
     Implement the cost function defined by equation (7).
 
@@ -254,11 +254,14 @@ def compute_cost(AL, Y):
     Returns:
     cost -- cross-entropy cost
     """
-    
+    L = len(parameters) // 2 
     m = Y.shape[1]
 
     # Compute loss from aL and y.
     cost = (1./m) * (-np.dot(Y,np.log(AL).T) - np.dot(1-Y, np.log(1-AL).T))
+
+    for l in range(1, L):
+        cost += (reg_term/(2*m))*np.sum(parameters[f"W{l}"])
     
     cost = np.squeeze(cost)      # To make sure your cost's shape is what we expect (e.g. this turns [[17]] into 17).
     assert(cost.shape == ())
@@ -378,7 +381,7 @@ def update_parameters(parameters, grads, learning_rate):
 
     # Update rule for each parameter. Use a for loop.
     for l in range(L):
-        parameters["W" + str(l+1)] = parameters["W" + str(l+1)] - learning_rate * grads["dW" + str(l+1)]
+        parameters["W" + str(l+1)] = parameters["W" + str(l+1)] - learning_rate * (grads["dW" + str(l+1)] + parameters["W" + str(l+1)])
         parameters["b" + str(l+1)] = parameters["b" + str(l+1)] - learning_rate * grads["db" + str(l+1)]
         
     return parameters
@@ -416,7 +419,7 @@ def predict(parameters, X):
     return p
 
 
-def L_layer_model(X, Y, layers_dims, activation = "relu", learning_rate = 0.0075, num_iterations = 3000, print_cost=False):
+def L_layer_model(X, Y, layers_dims, activation = "relu", reg_term = 0, learning_rate = 0.0075, num_iterations = 3000, print_cost=False):
     """
     Implements a L-layer neural network: [LINEAR->RELU]*(L-1)->LINEAR->SIGMOID.
     
@@ -448,7 +451,7 @@ def L_layer_model(X, Y, layers_dims, activation = "relu", learning_rate = 0.0075
         
         # Compute cost.
 
-        cost = compute_cost(AL, Y)
+        cost = compute_cost(AL, Y, parameters, reg_term)
         costs.append(cost)
         # Backward propagation.
         
@@ -465,7 +468,7 @@ def L_layer_model(X, Y, layers_dims, activation = "relu", learning_rate = 0.0075
     return parameters, costs
 
 
-def model(X_train, Y_train, X_test, Y_test, layers_dims, activation = "relu", learning_rate = 0.001, num_iterations = 3000, print_cost=False):
+def model(X_train, Y_train, X_test, Y_test, layers_dims, activation = "relu", reg_term = 0, learning_rate = 0.001, num_iterations = 3000, print_cost=False):
     """
     Builds the logistic regression model by calling the function you've implemented previously
     
@@ -484,7 +487,7 @@ def model(X_train, Y_train, X_test, Y_test, layers_dims, activation = "relu", le
     X_train = normalize_data(X_train)
     X_test = normalize_data(X_test)
    
-    parameters, costs = L_layer_model(X_train, Y_train, layers_dims, activation, learning_rate, num_iterations, print_cost)
+    parameters, costs = L_layer_model(X_train, Y_train, layers_dims, activation, reg_term, learning_rate, num_iterations, print_cost)
         
     Y_prediction_train = predict(parameters, X_train)
     Y_prediction_test = predict(parameters, X_test)
